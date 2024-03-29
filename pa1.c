@@ -15,7 +15,9 @@
 
 #include <stdio.h>
 #include <string.h>
-
+#include <unistd.h>
+#include <stdlib.h>
+extern char **environ;
 /***********************************************************************
  * run_command()
  *
@@ -28,8 +30,44 @@
  *   Return 0 when user inputs "exit"
  *   Return <0 on error
  */
+
 int run_command(int nr_tokens, char *tokens[])
-{
+ {	
+	
+	char **env = environ;
+	// char cwd[1024];
+	if (strcmp(tokens[0],"cd") == 0){
+		printf("%s",getenv(env[7]));
+		if(strcmp(tokens[1],"~") == 0){
+			chdir(getenv(env[7]));
+		}
+		
+		// if(){
+		// 	chdir(getenv(env[7]));
+		// }
+
+		else{
+			chdir(tokens[1]);
+		}
+
+		return 1;
+		
+	}
+
+	if (strcmp(tokens[0],"/bin/pwd") == 0){
+	
+		while(*env){
+			printf("%s\n",*env);
+			env++;
+		}
+		
+	
+		return 1;
+	}
+
+			
+		
+	
 	if (strcmp(tokens[0], "exit") == 0) return 0;
 
 	return -1;
