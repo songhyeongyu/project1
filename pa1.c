@@ -33,9 +33,7 @@ extern char **environ;
 
 int run_command(int nr_tokens, char *tokens[])
 {
-
 	
-
 	if (strcmp(tokens[0], "cd") == 0)
 	{
 		if (nr_tokens == 1)
@@ -55,7 +53,55 @@ int run_command(int nr_tokens, char *tokens[])
 
 		return 1;
 	}
-	
+
+	else if (nr_tokens > 0)
+	{
+		pid_t pid;
+		pid = fork();
+
+		// if (nr_tokens == 1)
+		// {
+
+		if (pid == 0)
+		{
+			execlp(tokens[0], tokens[0], NULL);
+		}
+		// }
+		// else if (nr_tokens > 1)
+		// {
+		// 	if(pid == 0){
+		// 		for(int i = 0; i<nr_tokens;i++){
+		// 			execlp(tokens[0],tokens[i],NULL);
+		// 		}
+		// 	}
+		// }
+
+		return 1;
+	}
+
+	// if (strcmp(tokens[0], "ls") == 0 || strcmp(tokens[0],"/bin/ls") == 0 || strcmp(tokens[0],"cp") == 0)
+	// {
+	// 	pid_t pid;
+	// 	pid = fork();
+	// 	if(pid == 0){
+
+	// 		execlp(tokens[0],tokens[0],NULL);
+	// 		return 1;
+	// 	}
+
+	// 	return 1;
+	// }
+
+	// if (strcmp(tokens[0],"pwd") == 0 || strcmp(tokens[0],"/bin/pwd") == 0){
+	// 	pid_t pid;
+	// 	pid = fork();
+
+	// 	if(pid == 0){
+	// 		execlp(tokens[0],tokens[0],NULL);
+	// 	}
+	// 	return 1;
+	// }
+
 	if (strcmp(tokens[0], "exit") == 0)
 		return 0;
 
