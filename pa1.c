@@ -32,47 +32,35 @@ extern char **environ;
  */
 
 int run_command(int nr_tokens, char *tokens[])
- {	
-	
-	char **env = environ;
-	// char cwd[1024];
-	if (strcmp(tokens[0],"cd") == 0){
-		printf("%s",getenv(env[7]));
-		if(strcmp(tokens[1],"~") == 0){
-			chdir(getenv(env[7]));
-		}
-		
-		// if(){
-		// 	chdir(getenv(env[7]));
-		// }
+{
 
-		else{
+	
+
+	if (strcmp(tokens[0], "cd") == 0)
+	{
+		if (nr_tokens == 1)
+		{
+			chdir(getenv("HOME"));
+		}
+
+		else if (nr_tokens > 1 && strcmp(tokens[1], "~") == 0)
+		{
+			chdir(getenv("HOME"));
+		}
+
+		else
+		{
 			chdir(tokens[1]);
 		}
 
 		return 1;
-		
 	}
-
-	if (strcmp(tokens[0],"/bin/pwd") == 0){
 	
-		while(*env){
-			printf("%s\n",*env);
-			env++;
-		}
-		
-	
-		return 1;
-	}
-
-			
-		
-	
-	if (strcmp(tokens[0], "exit") == 0) return 0;
+	if (strcmp(tokens[0], "exit") == 0)
+		return 0;
 
 	return -1;
 }
-
 
 /***********************************************************************
  * initialize()
@@ -85,11 +73,10 @@ int run_command(int nr_tokens, char *tokens[])
  *   Return 0 on successful initialization.
  *   Return other value on error, which leads the program to exit.
  */
-int initialize(int argc, char * const argv[])
+int initialize(int argc, char *const argv[])
 {
 	return 0;
 }
-
 
 /***********************************************************************
  * finalize()
@@ -98,6 +85,6 @@ int initialize(int argc, char * const argv[])
  *   Callback function for finalizing your code. Like @initialize(),
  *   you may leave this function blank.
  */
-void finalize(int argc, char * const argv[])
+void finalize(int argc, char *const argv[])
 {
 }
