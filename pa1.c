@@ -18,6 +18,8 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <stdbool.h>
+#include <sys/types.h>
+#include <sys/wait.h>
 #include "parser.h"
 #include "list_head.h"
 extern char **environ;
@@ -36,19 +38,23 @@ extern char **environ;
  */
 
 int run_command(int nr_tokens, char *tokens[])
-{	
-	
+{
+
 	char arr[MAX_COMMAND_LEN] = {'\0'};
 	char *arr_tokens[MAX_COMMAND_LEN];
-	
-	if (strcmp(tokens[0], "cd") == 0)
+
+	if (strcmp(tokens[0], "exit") == 0)
+		return 0;
+
+	else if (strcmp(tokens[0], "cd") == 0)
 	{
-		if (nr_tokens == 1)
+
+		if (nr_tokens == 1 || strcmp(tokens[1], "~") == 0)
 		{
 			chdir(getenv("HOME"));
 		}
 
-		else if (nr_tokens > 1 && strcmp(tokens[1], "~") == 0)
+		else if (nr_tokens == 1)
 		{
 			chdir(getenv("HOME"));
 		}
@@ -65,6 +71,7 @@ int run_command(int nr_tokens, char *tokens[])
 	{
 		pid_t pid;
 		pid = fork();
+		int stat;
 
 		if (nr_tokens == 1)
 		{
@@ -72,13 +79,17 @@ int run_command(int nr_tokens, char *tokens[])
 			if (pid == 0)
 			{
 				execlp(tokens[0], tokens[0], NULL);
+				return -1;
+			}
+			else
+			{
+				wait(&stat);
 			}
 		}
 
 		else if (nr_tokens > 1)
-		{	
-			
-		
+		{
+
 			if (pid == 0)
 			{
 				for (int i = 0; i < nr_tokens; i++)
@@ -88,21 +99,20 @@ int run_command(int nr_tokens, char *tokens[])
 					{
 						strcat(arr, " ");
 					}
-			
-					
 				}
-				parse_command(arr,arr_tokens);
+				parse_command(arr, arr_tokens);
 				execvp(tokens[0], arr_tokens);
 				free_command_tokens(arr_tokens);
-				
+				return -1;
+			}
+			else
+			{
+				wait(&stat);
 			}
 		}
 
 		return 1;
 	}
-
-	if (strcmp(tokens[0], "exit") == 0)
-		return 0;
 
 	return -1;
 }
