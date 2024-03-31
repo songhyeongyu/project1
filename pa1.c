@@ -17,7 +17,11 @@
 #include <string.h>
 #include <unistd.h>
 #include <stdlib.h>
+#include <stdbool.h>
+#include "parser.h"
+#include "list_head.h"
 extern char **environ;
+
 /***********************************************************************
  * run_command()
  *
@@ -32,7 +36,10 @@ extern char **environ;
  */
 
 int run_command(int nr_tokens, char *tokens[])
-{
+{	
+	
+	char arr[MAX_COMMAND_LEN] = {'\0'};
+	char *arr_tokens[MAX_COMMAND_LEN];
 	
 	if (strcmp(tokens[0], "cd") == 0)
 	{
@@ -59,48 +66,40 @@ int run_command(int nr_tokens, char *tokens[])
 		pid_t pid;
 		pid = fork();
 
-		// if (nr_tokens == 1)
-		// {
-
-		if (pid == 0)
+		if (nr_tokens == 1)
 		{
-			execlp(tokens[0], tokens[0], NULL);
+
+			if (pid == 0)
+			{
+				execlp(tokens[0], tokens[0], NULL);
+			}
 		}
-		// }
-		// else if (nr_tokens > 1)
-		// {
-		// 	if(pid == 0){
-		// 		for(int i = 0; i<nr_tokens;i++){
-		// 			execlp(tokens[0],tokens[i],NULL);
-		// 		}
-		// 	}
-		// }
+
+		else if (nr_tokens > 1)
+		{	
+			
+		
+			if (pid == 0)
+			{
+				for (int i = 0; i < nr_tokens; i++)
+				{
+					strcat(arr, tokens[i]);
+					if (i < nr_tokens - 1)
+					{
+						strcat(arr, " ");
+					}
+			
+					
+				}
+				parse_command(arr,arr_tokens);
+				execvp(tokens[0], arr_tokens);
+				free_command_tokens(arr_tokens);
+				
+			}
+		}
 
 		return 1;
 	}
-
-	// if (strcmp(tokens[0], "ls") == 0 || strcmp(tokens[0],"/bin/ls") == 0 || strcmp(tokens[0],"cp") == 0)
-	// {
-	// 	pid_t pid;
-	// 	pid = fork();
-	// 	if(pid == 0){
-
-	// 		execlp(tokens[0],tokens[0],NULL);
-	// 		return 1;
-	// 	}
-
-	// 	return 1;
-	// }
-
-	// if (strcmp(tokens[0],"pwd") == 0 || strcmp(tokens[0],"/bin/pwd") == 0){
-	// 	pid_t pid;
-	// 	pid = fork();
-
-	// 	if(pid == 0){
-	// 		execlp(tokens[0],tokens[0],NULL);
-	// 	}
-	// 	return 1;
-	// }
 
 	if (strcmp(tokens[0], "exit") == 0)
 		return 0;
