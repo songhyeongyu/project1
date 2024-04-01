@@ -50,6 +50,12 @@ int run_command(int nr_tokens, char *tokens[])
 	struct alias *alias_token_struct[MAX_COMMAND_LEN];
 	int arr_nr_token = 0;
 	static int alias_nr_token = 0;
+	int flag_pipe = 0;
+	int where_is_pipe = 0;
+	char pipe_wirte[MAX_COMMAND_LEN] = {'\0'};
+	char pipe_read[MAX_COMMAND_LEN] = {'\0'};
+	char *pipe_wirte_tokens[MAX_COMMAND_LEN];
+	char *pipe_read_tokens[MAX_COMMAND_LEN];
 	// char *alias_name_arr[MAX_COMMAND_LEN];
 	// char *alias_detail_arr[MAX_COMMAND_LEN];
 	if (strcmp(tokens[0], "exit") == 0)
@@ -142,29 +148,87 @@ int run_command(int nr_tokens, char *tokens[])
 						strcat(arr, " ");
 					}
 				}
-				// printf("%s\n",arr);
+				/*파이프가 존재 한다면 flag bit -> 0*/
 				arr_nr_token = parse_command(arr, arr_tokens);
-				// for(int i =0;i<arr_nr_token;i++){
-				// 	printf("%s\n",arr_tokens[i]);
-				// }
-				// printf("%d\n",arr_nr_token);
-
-				for (int i = 1; i < arr_nr_token; i++)
+				for (int i = 0; i < arr_nr_token; i++)
 				{
-					for (int j = 0; j < alias_nr_token; j++)
+					if (strcmp(arr_tokens[i], "|") == 0)
 					{
-						if (strcmp(arr_tokens[i], alias_token_struct[j]->alias_name) == 0)
-						{
-							// printf("n: %s\n",alias_token_struct[j]->alias_name);
-							// printf("d: %s\n",alias_token_struct[j]->alias_detail);
-							arr_tokens[i] = strdup(alias_token_struct[j]->alias_detail);
-						}
+						flag_pipe = 1;
+						where_is_pipe = i;
+						break;
 					}
 				}
+				
+				if (flag_pipe == 1)
+				{
+					int pipefd[2];
+					pid_t p_pid;
+					// char buf[MAX_COMMAND_LEN] = {'\0'};
+					for (int i = 0; i < where_is_pipe; i++)
+					{
+						strcat(pipe_wirte, arr_tokens[i]);
+						if (i < where_is_pipe - 1)
+						{
+							strcat(pipe_wirte, " ");
+						}
+					}
+					parse_command(pipe_wirte,pipe_wirte_tokens);
+					for (int i = where_is_pipe+1; i < arr_nr_token; i++)
+					{
+						strcat(pipe_read, arr_tokens[i]);
+						if (i < arr_nr_token - 1)
+						{
+							strcat(pipe_read, " ");
+						}
+					}
+					int a =parse_command(pipe_read,pipe_read_tokens);
+					for(int i = 0; i < a; i++){
+						printf("piperead[%d]: %s\n",i,pipe_read_tokens[i]);
+					}
+					if(pipe(pipefd) == -1){
+						perror("pipe");
+						return -1;
+					}
+					p_pid = fork();
+					if (p_pid == 0)
+					{
+						close(pipefd[1]);
+						execvp(pipe_wirte_tokens[0],pipe_wirte_tokens);
+						close(pipefd[0]);
+						free_command_tokens(pipe_wirte_tokens);
+						return 0;
+							
+					}
+					else
+					{
+						close(pipefd[0]);
+						execvp(pipe_read_tokens[0],pipe_read_tokens);
+						close(pipefd[1]);
+						wait(NULL);
+						free_command_tokens(pipe_read_tokens);
+						return 0;
+						
+					}
+					return -1;
+				}
+				else
+				{
+					for (int i = 1; i < arr_nr_token; i++)
+					{
+						for (int j = 0; j < alias_nr_token; j++)
+						{
+							if (strcmp(arr_tokens[i], alias_token_struct[j]->alias_name) == 0)
+							{
+								arr_tokens[i] = strdup(alias_token_struct[j]->alias_detail);
+							}
+						}
+					}
 
-				execvp(tokens[0], arr_tokens);
-				free_command_tokens(arr_tokens);
-				return -1;
+					execvp(tokens[0], arr_tokens);
+					free_command_tokens(arr_tokens);
+					return -1;
+				}
 			}
 
 			else
