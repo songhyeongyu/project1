@@ -52,9 +52,9 @@ int run_command(int nr_tokens, char *tokens[])
 	static int alias_nr_token = 0;
 	int flag_pipe = 0;
 	int where_is_pipe = 0;
-	char pipe_wirte[MAX_COMMAND_LEN] = {'\0'};
+	char pipe_write[MAX_COMMAND_LEN] = {'\0'};
 	char pipe_read[MAX_COMMAND_LEN] = {'\0'};
-	char *pipe_wirte_tokens[MAX_COMMAND_LEN];
+	char *pipe_write_tokens[MAX_COMMAND_LEN];
 	char *pipe_read_tokens[MAX_COMMAND_LEN];
 	// char *alias_name_arr[MAX_COMMAND_LEN];
 	// char *alias_detail_arr[MAX_COMMAND_LEN];
@@ -159,22 +159,25 @@ int run_command(int nr_tokens, char *tokens[])
 						break;
 					}
 				}
-				
+
 				if (flag_pipe == 1)
 				{
 					int pipefd[2];
+					int pstat;
+					int p_in_pstat;
 					pid_t p_pid;
-					// char buf[MAX_COMMAND_LEN] = {'\0'};
+					pid_t p_in_ppid;
+					// char buffer[MAX_COMMAND_LEN] = {'\0'};
 					for (int i = 0; i < where_is_pipe; i++)
 					{
-						strcat(pipe_wirte, arr_tokens[i]);
+						strcat(pipe_write, arr_tokens[i]);
 						if (i < where_is_pipe - 1)
 						{
-							strcat(pipe_wirte, " ");
+							strcat(pipe_write, " ");
 						}
 					}
-					parse_command(pipe_wirte,pipe_wirte_tokens);
-					for (int i = where_is_pipe+1; i < arr_nr_token; i++)
+					parse_command(pipe_write, pipe_write_tokens);
+					for (int i = where_is_pipe + 1; i < arr_nr_token; i++)
 					{
 						strcat(pipe_read, arr_tokens[i]);
 						if (i < arr_nr_token - 1)
@@ -182,35 +185,37 @@ int run_command(int nr_tokens, char *tokens[])
 							strcat(pipe_read, " ");
 						}
 					}
-					int a =parse_command(pipe_read,pipe_read_tokens);
-					for(int i = 0; i < a; i++){
-						printf("piperead[%d]: %s\n",i,pipe_read_tokens[i]);
-					}
-					if(pipe(pipefd) == -1){
+					parse_command(pipe_read, pipe_read_tokens);
+					
+					if (pipe(pipefd) == -1)
+					{
 						perror("pipe");
 						return -1;
 					}
 					p_pid = fork();
 					if (p_pid == 0)
 					{
-						close(pipefd[1]);
-						execvp(pipe_wirte_tokens[0],pipe_wirte_tokens);
 						close(pipefd[0]);
-						free_command_tokens(pipe_wirte_tokens);
-						return 0;
-							
+						dup2(pipefd[0], 0);
+						close(pipefd[1]);
+						execvp(pipe_read_tokens[0], pipe_read_tokens);
+						free_command_tokens(pipe_read_tokens);
+						return -1;
 					}
 					else
 					{
-						close(pipefd[0]);
-						execvp(pipe_read_tokens[0],pipe_read_tokens);
-						close(pipefd[1]);
-						wait(NULL);
-						free_command_tokens(pipe_read_tokens);
-						return 0;
-						
+						p_in_ppid = fork();
+						if (p_in_ppid == 0)
+						{	
+						}
+						else
+						{	
+						}
+						wait(&pstat);
+
+						return 1;
 					}
-					return -1;
+					return 0;
 				}
 				else
 				{
