@@ -52,10 +52,10 @@ int run_command(int nr_tokens, char *tokens[])
 	static int alias_nr_token = 0;
 	int flag_pipe = 0;
 	int where_is_pipe = 0;
-	char pipe_write[MAX_COMMAND_LEN] = {'\0'};
-	char pipe_read[MAX_COMMAND_LEN] = {'\0'};
-	char *pipe_write_tokens[MAX_COMMAND_LEN];
-	char *pipe_read_tokens[MAX_COMMAND_LEN];
+	char pipe_first[MAX_COMMAND_LEN] = {'\0'};
+	char pipe_second[MAX_COMMAND_LEN] = {'\0'};
+	char *pipe_first_token[MAX_COMMAND_LEN];
+	char *pipe_second_tokens[MAX_COMMAND_LEN];
 	// char *alias_name_arr[MAX_COMMAND_LEN];
 	// char *alias_detail_arr[MAX_COMMAND_LEN];
 	if (strcmp(tokens[0], "exit") == 0)
@@ -118,6 +118,7 @@ int run_command(int nr_tokens, char *tokens[])
 	else if (nr_tokens > 0)
 	{
 		pid_t pid;
+		// pid_t ppid;
 		pid = fork();
 		int stat;
 
@@ -164,59 +165,62 @@ int run_command(int nr_tokens, char *tokens[])
 				{
 					int pipefd[2];
 					int pstat;
-					int p_in_pstat;
 					pid_t p_pid;
-					pid_t p_in_ppid;
+					
 					// char buffer[MAX_COMMAND_LEN] = {'\0'};
 					for (int i = 0; i < where_is_pipe; i++)
 					{
-						strcat(pipe_write, arr_tokens[i]);
+						strcat(pipe_first, arr_tokens[i]);
 						if (i < where_is_pipe - 1)
 						{
-							strcat(pipe_write, " ");
+							strcat(pipe_first, " ");
 						}
 					}
-					parse_command(pipe_write, pipe_write_tokens);
+					parse_command(pipe_first, pipe_first_token);
 					for (int i = where_is_pipe + 1; i < arr_nr_token; i++)
 					{
-						strcat(pipe_read, arr_tokens[i]);
+						strcat(pipe_second, arr_tokens[i]);
 						if (i < arr_nr_token - 1)
 						{
-							strcat(pipe_read, " ");
+							strcat(pipe_second, " ");
 						}
 					}
-					parse_command(pipe_read, pipe_read_tokens);
+					parse_command(pipe_second, pipe_second_tokens);
+					pipe(pipefd);
 					
-					if (pipe(pipefd) == -1)
-					{
-						perror("pipe");
-						return -1;
-					}
 					p_pid = fork();
 					if (p_pid == 0)
 					{
-						close(pipefd[0]);
-						dup2(pipefd[0], 0);
+						dup2(pipefd[1],1);
 						close(pipefd[1]);
-						execvp(pipe_read_tokens[0], pipe_read_tokens);
-						free_command_tokens(pipe_read_tokens);
-						return -1;
+						close(pipefd[0]);
+						if(execvp(pipe_first_token[0],pipe_first_token)==-1){
+							free_command_tokens(pipe_first_token);
+							exit(EXIT_SUCCESS);
+							return -1;
+						}
+						execvp(pipe_first_token[0],pipe_first_token);
+						free_command_tokens(pipe_first_token);
+						
 					}
 					else
-					{
-						p_in_ppid = fork();
-						if (p_in_ppid == 0)
-						{	
+					{	
+						
+						close(pipefd[1]);
+						dup2(pipefd[0],0);
+						close(pipefd[0]);
+						if(execvp(pipe_second_tokens[0],pipe_second_tokens)==-1){
+							free_command_tokens(pipe_second_tokens);
+							exit(EXIT_SUCCESS);
+							return -1;
 						}
-						else
-						{	
-						}
-						wait(&pstat);
-
-						return 1;
+						execvp(pipe_second_tokens[0],pipe_second_tokens);
+						free_command_tokens(pipe_second_tokens);
 					}
+					wait(&pstat);
 					return 0;
 				}
+
 				else
 				{
 					for (int i = 1; i < arr_nr_token; i++)
@@ -232,7 +236,7 @@ int run_command(int nr_tokens, char *tokens[])
 
 					execvp(tokens[0], arr_tokens);
 					free_command_tokens(arr_tokens);
-					return -1;
+					return 1;
 				}
 			}
 
