@@ -163,61 +163,70 @@ int run_command(int nr_tokens, char *tokens[])
 
 				if (flag_pipe == 1)
 				{
-					int pipefd[2];
-					int pstat;
-					pid_t p_pid;
-					
-					// char buffer[MAX_COMMAND_LEN] = {'\0'};
+
 					for (int i = 0; i < where_is_pipe; i++)
 					{
-						strcat(pipe_first, arr_tokens[i]);
+						strcat(pipe_first, tokens[i]);
 						if (i < where_is_pipe - 1)
 						{
 							strcat(pipe_first, " ");
 						}
 					}
+
 					parse_command(pipe_first, pipe_first_token);
+
 					for (int i = where_is_pipe + 1; i < arr_nr_token; i++)
 					{
-						strcat(pipe_second, arr_tokens[i]);
+						strcat(pipe_second, tokens[i]);
 						if (i < arr_nr_token - 1)
 						{
 							strcat(pipe_second, " ");
 						}
 					}
 					parse_command(pipe_second, pipe_second_tokens);
+
+					int pipefd[2];
+					int pstat;
+					pid_t p_pid;
+
 					pipe(pipefd);
-					
+
 					p_pid = fork();
 					if (p_pid == 0)
 					{
-						dup2(pipefd[1],1);
-						close(pipefd[1]);
 						close(pipefd[0]);
-						if(execvp(pipe_first_token[0],pipe_first_token)==-1){
+						dup2(pipefd[1], 1);
+						close(pipefd[1]);
+
+						if (execvp(pipe_first_token[0], pipe_first_token) == -1)
+						{
 							free_command_tokens(pipe_first_token);
+							fprintf(stderr, "Unable to execute %s\n", pipe_first);
 							exit(EXIT_SUCCESS);
-							return -1;
 						}
-						execvp(pipe_first_token[0],pipe_first_token);
 						free_command_tokens(pipe_first_token);
-						
 					}
 					else
-					{	
-						
+					{
+						// wait(&pstat);
 						close(pipefd[1]);
-						dup2(pipefd[0],0);
+						dup2(pipefd[0], 0);
 						close(pipefd[0]);
-						if(execvp(pipe_second_tokens[0],pipe_second_tokens)==-1){
+						if (execvp(pipe_second_tokens[0], pipe_second_tokens) == -1)
+						{
+							
 							free_command_tokens(pipe_second_tokens);
+							fprintf(stderr, "Unable to execute %s\n", pipe_second);
 							exit(EXIT_SUCCESS);
-							return -1;
 						}
-						execvp(pipe_second_tokens[0],pipe_second_tokens);
+
 						free_command_tokens(pipe_second_tokens);
 					}
-					wait(&pstat);
+					if (pid > 0)
+					{
+						wait(&pstat);
+						return -1;
+					}
 					return 0;
 				}
 
@@ -236,7 +245,7 @@ int run_command(int nr_tokens, char *tokens[])
 
 					execvp(tokens[0], arr_tokens);
 					free_command_tokens(arr_tokens);
-					return 1;
+					return -1;
 				}
 			}
 
