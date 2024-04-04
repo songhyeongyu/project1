@@ -29,13 +29,13 @@ void sighandler(int signal)
 
 int main(int argc, const char *argv[])
 {
-	/*
+	
 	struct sigaction sa = {
 		.sa_handler = sighandler,
 		.sa_flags = 0,
 	}, old_sa;
 	sigaction(SIGPIPE, &sa, &old_sa);
-	*/
+	
 
 	fprintf(stderr, ">> Start\n");
 	sleep(1);
